@@ -8,6 +8,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/auth',
+    meta: { requiresGuest: true },
     component: () => import('@/widgets/auth-layout/ui/auth-layout.vue'),
     children: [
       { path: '', redirect: '/auth/login' },
@@ -15,9 +16,35 @@ const routes: RouteRecordRaw[] = [
       { path: 'registration', component: () => import('@/pages/auth/ui/registration.vue') },
     ],
   },
+  {
+    path: '/',
+    component: () => import('@/widgets/base/ui/base-layout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      { path: 'dashboard', component: () => import('@/pages/dashboard/index.vue') },
+    ],
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: () => (localStorage.getItem('user') ? '/' : '/auth/login'),
+  },
 ];
 
 export const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+router.beforeEach((to) => {
+  const isAuth = !!localStorage.getItem('user');
+
+  if (to.meta.requiresAuth && !isAuth) {
+    return '/auth/login';
+  }
+
+  if (to.meta.requiresGuest && isAuth) {
+    return '/dashboard';
+  }
+
+  return true;
 });
